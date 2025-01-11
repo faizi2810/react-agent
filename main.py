@@ -5,7 +5,7 @@ from langchain.tools.render import render_text_description
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 import os
-from langchain.agents.output_parsers import ReActJsonSingleInputOutputParser
+from langchain.agents.output_parsers import ReActSingleInputOutputParser
 load_dotenv()
 
 

@@ -11,6 +11,7 @@ load_dotenv()
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain.tools import Tool
 from langchain.agents.format_scratchpad import format_log_to_str
+from callbacks import AgentCallbackHandler
 
 
 @tool
@@ -61,8 +62,8 @@ if __name__ == '__main__':
      tool_names = ", ".join([t.name for t in tools]))
     
 
-    # llm = ChatOpenAI(temperature=0, stop=["\nObservation"], api_key=os.environ.get('OPENAI_API_KEY'))
-    llm = ChatOllama(model='llama3', stop=["\nObservation"])
+    #llm = ChatOpenAI(temperature=0, stop=["\nObservation"], api_key=os.environ.get('OPENAI_API_KEY'), callbacks=[AgentCallbackHandler()])
+    llm = ChatOllama(model='llama3', stop=["\nObservation"], callbacks=[AgentCallbackHandler()])
     intermediate_steps = []
 
     agent = (
@@ -74,29 +75,25 @@ if __name__ == '__main__':
         | llm 
         | ReActSingleInputOutputParser())
 
-    agent_step: Union[AgentAction, AgentFinish] = agent.invoke(
-        {
-            "input": "What is the length of Dog in characters?",
-            "agent_scratchpad": intermediate_steps
-        }
-    )
-    print(agent_step)
-    
-    if isinstance(agent_step,AgentAction):
-        tool_name = agent_step.tool
-        tool_to_use = find_tool_by_name(tools,tool_name)
-        tool_input = agent_step.tool_input
-        
-        observation = tool_to_use.func(str(tool_input))
-        intermediate_steps.append((agent_step,str(observation)))
-        
+    agent_step=""
+    while not isinstance(agent_step, AgentFinish):
         agent_step: Union[AgentAction, AgentFinish] = agent.invoke(
             {
                 "input": "What is the length of Dog in characters?",
                 "agent_scratchpad": intermediate_steps
             }
         )
-        print(f"{observation=}")
+        print(agent_step)
         
+        if isinstance(agent_step,AgentAction):
+            tool_name = agent_step.tool
+            tool_to_use = find_tool_by_name(tools,tool_name)
+            tool_input = agent_step.tool_input
+            
+            observation = tool_to_use.func(str(tool_input))
+            intermediate_steps.append((agent_step,str(observation)))
+            
+            print(f"{observation=}")
+            
     if isinstance(agent_step,AgentFinish):
         print(agent_step.return_values)
